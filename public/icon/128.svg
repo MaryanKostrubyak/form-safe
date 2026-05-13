@@ -1,0 +1,21 @@
+<svg width="128" height="128" viewBox="0 0 128 128" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bg" x1="20" y1="14" x2="108" y2="118" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#075985"/>
+      <stop offset="0.55" stop-color="#0F766E"/>
+      <stop offset="1" stop-color="#164E63"/>
+    </linearGradient>
+    <linearGradient id="page" x1="36" y1="24" x2="90" y2="101" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FFFFFF"/>
+      <stop offset="1" stop-color="#E0F2FE"/>
+    </linearGradient>
+  </defs>
+  <rect x="8" y="8" width="112" height="112" rx="30" fill="url(#bg)"/>
+  <path d="M38 26H78L92 40V93C92 99.1 87.1 104 81 104H47C40.9 104 36 99.1 36 93V28C36 26.9 36.9 26 38 26Z" fill="url(#page)"/>
+  <path d="M78 26V38C78 39.1 78.9 40 80 40H92L78 26Z" fill="#BAE6FD"/>
+  <rect x="48" y="52" width="31" height="6" rx="3" fill="#0F766E"/>
+  <rect x="48" y="66" width="25" height="5" rx="2.5" fill="#7DD3FC"/>
+  <rect x="48" y="78" width="34" height="5" rx="2.5" fill="#7DD3FC"/>
+  <path d="M64 84L87 75V89C87 101 77.9 110.4 64 114C50.1 110.4 41 101 41 89V75L64 84Z" fill="#082F49"/>
+  <path d="M54 93L61 100L75 86" stroke="#67E8F9" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>
