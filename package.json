@@ -1,8 +1,30 @@
 {
   "name": "formsafe",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "private": true,
   "description": "Privacy-first Chrome extension that autosaves online form drafts locally.",
+  "keywords": [
+    "chrome-extension",
+    "browser-extension",
+    "form-autosave",
+    "form-recovery",
+    "privacy-first",
+    "local-first",
+    "productivity",
+    "manifest-v3",
+    "wxt",
+    "react",
+    "typescript"
+  ],
+  "license": "MIT",
+  "homepage": "https://github.com/MaryanKostrubyak/form-safe#readme",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/MaryanKostrubyak/form-safe.git"
+  },
+  "bugs": {
+    "url": "https://github.com/MaryanKostrubyak/form-safe/issues"
+  },
   "type": "module",
   "packageManager": "pnpm@9.15.4",
   "scripts": {
@@ -11,6 +33,7 @@
     "zip": "wxt zip",
     "typecheck": "tsc --noEmit",
     "lint": "eslint . --max-warnings=0",
+    "release:check": "npm run typecheck && npm run lint && npm run build && npm run zip",
     "postinstall": "wxt prepare"
   },
   "dependencies": {

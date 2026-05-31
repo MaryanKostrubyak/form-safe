@@ -4,6 +4,10 @@
 
 FormSafe automatically saves form drafts locally and helps you recover lost text after refreshes, crashes, closed tabs, or accidental navigation.
 
+[![Latest Release](https://img.shields.io/github/v/release/MaryanKostrubyak/form-safe?label=release)](https://github.com/MaryanKostrubyak/form-safe/releases/latest)
+[![CI](https://github.com/MaryanKostrubyak/form-safe/actions/workflows/ci.yml/badge.svg)](https://github.com/MaryanKostrubyak/form-safe/actions/workflows/ci.yml)
+[![License](https://img.shields.io/github/license/MaryanKostrubyak/form-safe)](./LICENSE)
+
 ![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?style=for-the-badge&logo=typescript&logoColor=white)
 ![React](https://img.shields.io/badge/React-20232A?style=for-the-badge&logo=react&logoColor=61DAFB)
 ![WXT](https://img.shields.io/badge/WXT-111827?style=for-the-badge)
@@ -217,7 +221,16 @@ pnpm build
 pnpm zip
 pnpm typecheck
 pnpm lint
+pnpm release:check
 ```
+
+## Release Process
+
+1. Update `CHANGELOG.md`.
+2. Ensure `package.json` has the target version.
+3. Run `pnpm release:check`.
+4. Create and push a tag in `vX.Y.Z` format (for example `v1.0.0`).
+5. GitHub Actions publishes a release with the extension zip and SHA256 checksum.
 
 ## Project Structure
 
@@ -253,6 +266,15 @@ The broad host permission is needed because FormSafe protects forms on many webs
 
 Coming soon.
 
+## Findability Checklist
+
+For better GitHub search visibility, keep these values updated in the repository **About** panel:
+
+- Description: `Privacy-first Chrome extension that autosaves form drafts locally and helps recover lost text after refreshes, crashes, closed tabs, and navigation.`
+- Website: `https://github.com/MaryanKostrubyak/form-safe#readme` (or Chrome Web Store link after publishing)
+- Topics: `chrome-extension`, `browser-extension`, `form-autosave`, `form-recovery`, `privacy-first`, `local-first`, `manifest-v3`, `wxt`, `react`, `typescript`, `chrome-storage`, `productivity`
+- Social preview image: add a dedicated banner screenshot when available
+
 ## Roadmap
 
 - Encrypted local drafts
@@ -266,4 +288,4 @@ Coming soon.
 
 ## Status
 
-FormSafe is an MVP designed for local testing, product demos, and portfolio review. It is not connected to any backend service and does not require an account.
+`1.0.0` is the first public stable release focused on local-first draft recovery. FormSafe is not connected to any backend service and does not require an account.

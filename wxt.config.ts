@@ -8,7 +8,7 @@ export default defineConfig({
     short_name: 'FormSafe',
     description:
       'Privacy-first autosave for online forms. Drafts stay local in your browser.',
-    version: '0.1.0',
+    homepage_url: 'https://github.com/MaryanKostrubyak/form-safe',
     permissions: ['storage', 'sidePanel', 'activeTab'],
     host_permissions: ['<all_urls>'],
     action: {
