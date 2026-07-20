@@ -8,8 +8,8 @@ on:
 
 jobs:
   quality:
-    name: Typecheck, lint, and build
-    runs-on: ubuntu-latest
+    name: Test and build Chrome
+    runs-on: windows-latest
 
     steps:
       - name: Checkout
@@ -35,5 +35,14 @@ jobs:
       - name: Lint
         run: pnpm lint
 
-      - name: Build extension
+      - name: Unit and integration tests
+        run: pnpm test:coverage
+
+      - name: Build Chrome extension
         run: pnpm build
+
+      - name: Install Chromium for E2E
+        run: pnpm exec playwright install chromium
+
+      - name: Chromium E2E and visual regression
+        run: pnpm test:e2e

@@ -1,4 +1,18 @@
-import type { Draft, Settings, TabContext } from '../types';
+import type {
+  Draft,
+  FieldSnapshot,
+  FormDraftSession,
+  SessionCapture,
+  SessionPage,
+  SessionQuery,
+  Settings,
+  StorageStats,
+  TabContext,
+  VersionReason,
+} from '../types';
+import type { SecurityStatus } from './v2/security';
+import type { BackupPreview } from './v2/backup';
+import type { DataChangeScope } from './v2/change-events';
 
 export const MessageTypes = {
   GetSettings: 'formsafe:get-settings',
@@ -19,6 +33,30 @@ export const MessageTypes = {
   GetSiteStatus: 'formsafe:get-site-status',
   RestoreDraftToTab: 'formsafe:restore-draft-to-tab',
   ContentRestoreDraft: 'formsafe:content-restore-draft',
+  SaveSession: 'formsafe:v2-save-session',
+  QuerySessions: 'formsafe:v2-query-sessions',
+  GetSession: 'formsafe:v2-get-session',
+  PatchSession: 'formsafe:v2-patch-session',
+  CheckpointSession: 'formsafe:v2-checkpoint-session',
+  DeleteSession: 'formsafe:v2-delete-session',
+  StorageStats: 'formsafe:v2-storage-stats',
+  RestoreSession: 'formsafe:v2-restore-session',
+  ContentRestoreSession: 'formsafe:v2-content-restore-session',
+  ContentRestoreResult: 'formsafe:v2-content-restore-result',
+  IgnoreFocusedField: 'formsafe:v2-ignore-focused-field',
+  GetSecurityStatus: 'formsafe:v2-security-status',
+  EnableEncryption: 'formsafe:v2-enable-encryption',
+  DisableEncryption: 'formsafe:v2-disable-encryption',
+  ChangePassphrase: 'formsafe:v2-change-passphrase',
+  Unlock: 'formsafe:v2-unlock',
+  Lock: 'formsafe:v2-lock',
+  RequestHostAccess: 'formsafe:v2-request-host-access',
+  ConfirmHostAccess: 'formsafe:v2-confirm-host-access',
+  GetHostAccess: 'formsafe:v2-get-host-access',
+  ExportBackup: 'formsafe:v2-export-backup',
+  ImportBackup: 'formsafe:v2-import-backup',
+  PreviewImport: 'formsafe:v2-preview-import',
+  DataChanged: 'formsafe:v2-data-changed',
 } as const;
 
 export type MessageType = (typeof MessageTypes)[keyof typeof MessageTypes];
@@ -41,7 +79,40 @@ export type AppMessage =
   | { type: typeof MessageTypes.TogglePauseOrigin; origin: string }
   | { type: typeof MessageTypes.GetSiteStatus; origin: string; hostname: string }
   | { type: typeof MessageTypes.RestoreDraftToTab; tabId?: number; draft: Draft }
-  | { type: typeof MessageTypes.ContentRestoreDraft; draft: Draft };
+  | { type: typeof MessageTypes.ContentRestoreDraft; draft: Draft }
+  | { type: typeof MessageTypes.SaveSession; capture: SessionCapture; reason: 'autosave' | VersionReason }
+  | { type: typeof MessageTypes.QuerySessions; query: SessionQuery }
+  | { type: typeof MessageTypes.GetSession; id: string }
+  | { type: typeof MessageTypes.PatchSession; id: string; patch: Partial<Pick<FormDraftSession, 'status' | 'isFavorite'>> }
+  | { type: typeof MessageTypes.CheckpointSession; id: string }
+  | { type: typeof MessageTypes.DeleteSession; id: string }
+  | { type: typeof MessageTypes.StorageStats }
+  | { type: typeof MessageTypes.RestoreSession; id: string; versionId?: string; fieldIds?: string[] }
+  | { type: typeof MessageTypes.ContentRestoreSession; requestId: string; sessionId: string; origin: string; pathname: string; formSignature: string; fields: FieldSnapshot[] }
+  | { type: typeof MessageTypes.ContentRestoreResult; requestId: string; success: boolean }
+  | { type: typeof MessageTypes.IgnoreFocusedField }
+  | { type: typeof MessageTypes.GetSecurityStatus }
+  | { type: typeof MessageTypes.EnableEncryption; passphrase: string }
+  | { type: typeof MessageTypes.DisableEncryption; passphrase: string }
+  | { type: typeof MessageTypes.ChangePassphrase; currentPassphrase: string; newPassphrase: string }
+  | { type: typeof MessageTypes.Unlock; passphrase: string }
+  | { type: typeof MessageTypes.Lock }
+  | { type: typeof MessageTypes.RequestHostAccess; origins: string[]; mode: Settings['hostAccessMode'] }
+  | { type: typeof MessageTypes.ConfirmHostAccess; mode: Settings['hostAccessMode'] }
+  | { type: typeof MessageTypes.GetHostAccess }
+  | { type: typeof MessageTypes.ExportBackup; encrypted: boolean; passphrase?: string }
+  | { type: typeof MessageTypes.ImportBackup; contents: string; passphrase?: string }
+  | { type: typeof MessageTypes.PreviewImport; contents: string; passphrase?: string }
+  | { type: typeof MessageTypes.DataChanged; scope?: DataChangeScope };
+
+export interface AppStateSnapshot {
+  settings: Settings;
+  security: SecurityStatus;
+  storage: StorageStats;
+}
+
+export type QuerySessionsResponse = SessionPage;
+export type ImportPreviewResponse = BackupPreview;
 
 export type MessageResponse<T> =
   | { ok: true; data: T }

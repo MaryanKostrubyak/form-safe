@@ -9,8 +9,9 @@ export default defineConfig({
     description:
       'Privacy-first autosave for online forms. Drafts stay local in your browser.',
     homepage_url: 'https://github.com/MaryanKostrubyak/form-safe',
-    permissions: ['storage', 'sidePanel', 'activeTab'],
-    host_permissions: ['<all_urls>'],
+    permissions: ['storage', 'activeTab', 'scripting', 'contextMenus'],
+    optional_host_permissions: ['*://*/*'],
+    minimum_chrome_version: '116',
     action: {
       default_title: 'FormSafe',
       default_icon: {
@@ -26,8 +27,15 @@ export default defineConfig({
       48: 'icon/48.png',
       128: 'icon/128.png',
     },
-    side_panel: {
-      default_path: 'sidepanel.html',
+    commands: {
+      'open-recovery': {
+        suggested_key: { default: 'Alt+Shift+F' },
+        description: 'Open FormSafe recovery',
+      },
+      'restore-latest': {
+        suggested_key: { default: 'Alt+Shift+R' },
+        description: 'Restore the latest matching form session',
+      },
     },
   },
 });

@@ -2,13 +2,16 @@
 
 ## Privacy and Data Handling
 
-FormSafe stores drafts locally with `chrome.storage.local`. It does not use a backend, AI service, analytics service, or external API for draft processing.
+FormSafe stores form sessions locally in IndexedDB. Settings and technical metadata use `storage.local`. It does not use a backend, cloud sync, AI service, telemetry, analytics, or an external API for form processing.
 
 Security-sensitive behavior should stay conservative:
 
 - Password fields must not be saved.
 - Payment fields must not be saved.
-- Token, API key, OTP, and secret fields must not be saved.
+- Token, API key, OTP, PIN, SSN, IBAN, passport, recovery phrase, and secret fields must not be saved.
+- A form containing a credential or payment field must be blocked as a whole by default.
+- Restore must match the exact origin, path, frame, and form signature.
+- Encryption keys must remain in `storage.session`, never persistent storage.
 - Draft export and deletion controls should remain easy to find.
 - New permissions should be avoided unless they are required for core functionality.
 
@@ -25,4 +28,4 @@ Include:
 
 ## Supported Versions
 
-FormSafe is currently an MVP. Security fixes should target the main branch.
+Security fixes target the current 2.x release line.

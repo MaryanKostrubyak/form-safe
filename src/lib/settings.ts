@@ -14,10 +14,15 @@ export const DEFAULT_SETTINGS: Settings = {
   showSaveStatus: true,
   language: 'en',
   theme: 'system',
+  onboardingComplete: false,
+  hostAccessMode: 'unconfigured',
+  saveSafeControls: true,
+  ignoredFieldRules: [],
 };
 
 const LANGUAGE_CODES: LanguageCode[] = ['en', 'es', 'zh', 'hi', 'ar', 'fr', 'pt', 'de', 'ja', 'ko', 'uk', 'ru'];
 const THEME_MODES: ThemeMode[] = ['system', 'light', 'dark'];
+const HOST_ACCESS_MODES: Settings['hostAccessMode'][] = ['unconfigured', 'all', 'selected'];
 
 export function normalizeSettings(value: Partial<Settings> | undefined): Settings {
   return {
@@ -30,6 +35,10 @@ export function normalizeSettings(value: Partial<Settings> | undefined): Setting
     siteWhitelist: normalizeRules(value?.siteWhitelist),
     language: normalizeChoice(value?.language, LANGUAGE_CODES, DEFAULT_SETTINGS.language),
     theme: normalizeChoice(value?.theme, THEME_MODES, DEFAULT_SETTINGS.theme),
+    onboardingComplete: Boolean(value?.onboardingComplete),
+    hostAccessMode: normalizeChoice(value?.hostAccessMode, HOST_ACCESS_MODES, DEFAULT_SETTINGS.hostAccessMode),
+    saveSafeControls: value?.saveSafeControls ?? DEFAULT_SETTINGS.saveSafeControls,
+    ignoredFieldRules: normalizeRules(value?.ignoredFieldRules),
   };
 }
 

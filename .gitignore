@@ -2,5 +2,8 @@ node_modules/
 .wxt/
 .output/
 dist/
+coverage/
+test-results/
+playwright-report/
 *.log
 .DS_Store

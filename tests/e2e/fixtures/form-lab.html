@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="en">
+<head><meta charset="UTF-8"><title>FormSafe fixture</title></head>
+<body>
+  <form id="standard-form" action="/complete">
+    <input type="hidden" name="csrf_token" value="fixture-token">
+    <label>Title <input id="title" name="title"></label>
+    <label>Message <textarea id="message" name="message"></textarea></label>
+    <label>Category <select id="category" name="category"><option value="">Choose</option><option value="work">Work</option></select></label>
+    <label><input id="follow-up" type="checkbox" name="followUp"> Follow up</label>
+    <button type="submit">Submit</button>
+  </form>
+  <form id="sensitive-form"><label>Password <input name="password" type="password"></label><textarea name="notes"></textarea></form>
+  <div id="react-controlled"><label>Controlled <input id="controlled"></label><output id="controlled-value"></output></div>
+  <div class="ProseMirror" contenteditable="true" aria-label="ProseMirror editor"></div>
+  <div class="ql-editor" contenteditable="true" aria-label="Quill editor"></div>
+  <div data-lexical-editor="true" contenteditable="true" aria-label="Lexical editor"></div>
+  <div class="cm-content" contenteditable="true" aria-label="CodeMirror editor"></div>
+  <div id="shadow-host"></div>
+  <iframe src="/tests/e2e/fixtures/frame.html" title="Form frame"></iframe>
+  <script>
+    const controlled = document.querySelector('#controlled');
+    controlled.addEventListener('input', () => { document.querySelector('#controlled-value').textContent = controlled.value; });
+    const shadow = document.querySelector('#shadow-host').attachShadow({ mode: 'open' });
+    shadow.innerHTML = '<form id="shadow-form"><label>Shadow note <textarea name="shadowNote"></textarea></label></form>';
+    history.pushState = new Proxy(history.pushState, { apply(target, self, args) { return Reflect.apply(target, self, args); } });
+  </script>
+</body>
+</html>

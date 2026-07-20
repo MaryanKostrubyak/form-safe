@@ -39,7 +39,7 @@ export function Button({
     <button
       type={type}
       className={cn(
-        'inline-flex shrink-0 items-center justify-center rounded-lg border font-semibold transition focus:outline-none focus:ring-2 focus:ring-brand-500 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-55 dark:focus:ring-offset-slate-950',
+        'inline-flex shrink-0 items-center justify-center rounded-lg border font-semibold transition-[background-color,border-color,color,transform] duration-150 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:ring-offset-2 active:translate-y-px disabled:cursor-not-allowed disabled:opacity-55 disabled:active:translate-y-0 dark:focus:ring-offset-slate-950',
         variants[variant],
         sizes[size],
         className,

@@ -1,226 +1,273 @@
-import { createRoot } from 'react-dom/client';
-import { useCallback, useEffect, useState } from 'react';
-import { FileText, PanelRightOpen, PauseCircle, PlayCircle, Settings as SettingsIcon, ShieldCheck } from 'lucide-react';
-import '../../src/styles/global.css';
-import { Badge } from '../../src/components/Badge';
-import { Button } from '../../src/components/Button';
-import { Card } from '../../src/components/Card';
-import { Skeleton } from '../../src/components/Skeleton';
-import { Toast, type ToastTone } from '../../src/components/Toast';
-import { getDomain } from '../../src/lib/format';
-import { t } from '../../src/lib/i18n';
+import { createRoot } from "react-dom/client";
+import { useEffect, useState } from "react";
+import {
+  Database,
+  LockKeyhole,
+  PanelRightOpen,
+  PauseCircle,
+  PlayCircle,
+  Settings,
+  ShieldCheck,
+  Unlock,
+} from "lucide-react";
+import "../../src/styles/global.css";
+import { Badge } from "../../src/components/Badge";
+import { Button } from "../../src/components/Button";
+import { Card } from "../../src/components/Card";
+import { Input } from "../../src/components/Input";
+import { t } from "../../src/lib/i18n";
 import {
   MessageTypes,
   sendMessage,
+  type AppMessage,
   type SiteStatus,
-} from '../../src/lib/messages';
-import { applyDocumentPreferences } from '../../src/lib/preferences';
-import { DEFAULT_SETTINGS } from '../../src/lib/settings';
-import type { Settings, TabContext } from '../../src/types';
+} from "../../src/lib/messages";
+import { applyDocumentPreferences } from "../../src/lib/preferences";
+import { DEFAULT_SETTINGS } from "../../src/lib/settings";
+import type {
+  Settings as AppSettings,
+  StorageStats,
+  TabContext,
+} from "../../src/types";
+import type { SecurityStatus } from "../../src/lib/v2/security";
+import { ALL_SITES_PATTERN } from "../../src/lib/v2/host-access";
+import { openSidePanelAndClosePopup } from "../../src/lib/v2/side-panel";
 
-interface ToastState {
-  message: string;
-  tone: ToastTone;
-}
+function PopupApp() {
+  const [settings, setSettings] = useState(DEFAULT_SETTINGS);
+  const [context, setContext] = useState<TabContext>();
+  const [site, setSite] = useState<SiteStatus>();
+  const [security, setSecurity] = useState<SecurityStatus>({
+    enabled: false,
+    locked: false,
+  });
+  const [stats, setStats] = useState<StorageStats>();
+  const [access, setAccess] = useState<string[]>([]);
+  const [passphrase, setPassphrase] = useState("");
+  const [error, setError] = useState("");
+  const [panelError, setPanelError] = useState("");
 
-interface PopupAppProps {
-  initialSettings: Settings;
-}
-
-function PopupApp({ initialSettings }: PopupAppProps) {
-  const [settings, setSettings] = useState<Settings>(initialSettings);
-  const [context, setContext] = useState<TabContext | null>(null);
-  const [status, setStatus] = useState<SiteStatus | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [toast, setToast] = useState<ToastState | null>(null);
-
-  const language = settings.language;
-
-  useEffect(() => {
-    applyDocumentPreferences(settings);
-    if (settings.theme !== 'system') return undefined;
-
-    const media = window.matchMedia('(prefers-color-scheme: dark)');
-    const onChange = () => applyDocumentPreferences(settings);
-    media.addEventListener('change', onChange);
-    return () => media.removeEventListener('change', onChange);
-  }, [settings]);
-
-  const showToast = useCallback((message: string, tone: ToastTone = 'info') => {
-    setToast({ message, tone });
-    window.setTimeout(() => setToast(null), 2000);
-  }, []);
-
-  const load = useCallback(async () => {
-    setLoading(true);
-    const [settingsResponse, tabResponse] = await Promise.all([
-      sendMessage<Settings>({ type: MessageTypes.GetSettings }),
-      sendMessage<TabContext>({ type: MessageTypes.GetTabContext }),
-    ]);
-
-    const nextSettings = settingsResponse.ok ? settingsResponse.data : DEFAULT_SETTINGS;
-    setSettings(nextSettings);
-
-    if (!tabResponse.ok) {
-      setLoading(false);
-      showToast(tabResponse.error, 'error');
-      return;
-    }
-
-    setContext(tabResponse.data);
-    if (tabResponse.data.isSupported) {
-      const statusResponse = await sendMessage<SiteStatus>({
-        type: MessageTypes.GetSiteStatus,
-        origin: tabResponse.data.origin,
-        hostname: tabResponse.data.hostname,
-      });
-      if (statusResponse.ok) {
-        setStatus(statusResponse.data);
-        setSettings(statusResponse.data.settings);
-      } else {
-        showToast(statusResponse.error, 'error');
+  const load = async () => {
+    const [settingsResult, contextResult, securityResult, accessResult] =
+      await Promise.all([
+        sendMessage<AppSettings>({ type: MessageTypes.GetSettings }),
+        sendMessage<TabContext>({ type: MessageTypes.GetTabContext }),
+        sendMessage<SecurityStatus>({ type: MessageTypes.GetSecurityStatus }),
+        sendMessage<{ origins: string[] }>({
+          type: MessageTypes.GetHostAccess,
+        }),
+      ]);
+    if (settingsResult.ok) setSettings(settingsResult.data);
+    if (contextResult.ok) {
+      setContext(contextResult.data);
+      if (contextResult.data.isSupported) {
+        const result = await sendMessage<SiteStatus>({
+          type: MessageTypes.GetSiteStatus,
+          origin: contextResult.data.origin,
+          hostname: contextResult.data.hostname,
+        });
+        if (result.ok) setSite(result.data);
       }
     }
-
-    setLoading(false);
-  }, [showToast]);
-
+    if (securityResult.ok) setSecurity(securityResult.data);
+    if (accessResult.ok) setAccess(accessResult.data.origins);
+    if (!securityResult.ok || !securityResult.data.locked) {
+      const result = await sendMessage<StorageStats>({
+        type: MessageTypes.StorageStats,
+      });
+      if (result.ok) setStats(result.data);
+    }
+  };
   useEffect(() => {
     void load();
-  }, [load]);
+  }, []);
+  useEffect(() => {
+    const listener = (message: AppMessage) => {
+      if (message.type === MessageTypes.DataChanged) void load();
+    };
+    chrome.runtime.onMessage.addListener(listener);
+    return () => chrome.runtime.onMessage.removeListener(listener);
+  }, []);
+  useEffect(() => {
+    applyDocumentPreferences(settings);
+  }, [settings]);
 
-  const openSidePanel = async () => {
-    const tabId = await getActiveTabId();
-
-    if (tabId && chrome.sidePanel?.open) {
-      try {
-        await chrome.sidePanel.setOptions?.({
-          tabId,
-          path: 'sidepanel.html',
-          enabled: true,
-        });
-        await chrome.sidePanel.open({ tabId });
-        window.close();
-        return;
-      } catch {
-        // Some Chrome contexts only allow side panel opening through the background worker.
-      }
-    }
-
-    const response = await sendMessage<boolean>({ type: MessageTypes.OpenSidePanel, tabId });
-    if (!response.ok || !response.data) showToast(response.ok ? t(language, 'sidePanelUnavailable') : response.error, 'error');
-    else window.close();
-  };
-
+  const hasAccess = Boolean(
+    context?.isSupported &&
+      access.some(
+        (pattern) =>
+        pattern === "<all_urls>" ||
+        pattern === ALL_SITES_PATTERN ||
+        pattern === "http://*/*" ||
+          pattern === "https://*/*" ||
+          pattern.startsWith(`${context.origin}/`),
+      ),
+  );
+  const tr = (key: Parameters<typeof t>[1], values?: Parameters<typeof t>[2]) =>
+    t(settings.language, key, values);
+  const onboardingUrl = chrome.runtime.getURL(
+    `/onboarding.html${context?.origin ? `?origin=${encodeURIComponent(context.origin)}` : ""}`,
+  );
   const togglePause = async () => {
-    if (!context?.isSupported) return;
-    const response = await sendMessage<SiteStatus>({
+    if (!context) return;
+    const result = await sendMessage<SiteStatus>({
       type: MessageTypes.TogglePauseOrigin,
       origin: context.origin,
     });
-    if (response.ok) {
-      setStatus(response.data);
-      setSettings(response.data.settings);
-      showToast(response.data.isPaused ? t(language, 'autosavePaused') : t(language, 'autosaveResumed'), 'success');
-    } else {
-      showToast(response.error, 'error');
-    }
+    if (result.ok) setSite(result.data);
   };
-
-  const openSettings = () => {
-    chrome.runtime.openOptionsPage();
+  const unlockStore = async () => {
+    const result = await sendMessage<boolean>({
+      type: MessageTypes.Unlock,
+      passphrase,
+    });
+    if (result.ok && result.data) {
+      setPassphrase("");
+      await load();
+    } else setError("Incorrect passphrase.");
   };
-
-  const currentDomain = context?.isSupported ? getDomain(context.origin) : t(language, 'unavailablePage');
-  const isPaused = Boolean(status?.isPaused);
-  const draftCount = status?.draftCount ?? 0;
+  const openDrafts = () => {
+    setPanelError("");
+    void openSidePanelAndClosePopup(
+      chrome.sidePanel,
+      context?.tabId,
+      () => window.close(),
+    ).then((opened) => {
+      if (!opened) setPanelError(tr("sidePanelUnavailable"));
+    });
+  };
 
   return (
     <main className="w-[360px] bg-mist p-4 text-slate-900 dark:bg-slate-950 dark:text-slate-100">
       <header className="flex items-center gap-3">
-        <div className="grid size-10 place-items-center rounded-xl bg-brand-600 text-white shadow-soft">
-          <ShieldCheck className="size-5" />
+        <div className="grid size-9 place-items-center rounded-lg bg-brand-600 text-white">
+          <ShieldCheck className="size-4" />
         </div>
-        <div className="min-w-0">
-          <h1 className="text-base font-bold tracking-tight">FormSafe</h1>
-          <p className="truncate text-xs text-slate-600 dark:text-slate-400">{t(language, 'appTagline')}</p>
+        <div>
+          <h1 className="text-sm font-bold">FormSafe</h1>
+          <p className="text-xs text-slate-500">{tr("appTagline")}</p>
         </div>
       </header>
-
-      <Card className="mt-4 p-3">
-        {loading ? (
-          <div className="space-y-3">
-            <Skeleton className="h-4 w-32" />
-            <Skeleton className="h-8 w-full" />
+      {security.locked ? (
+        <Card className="mt-4 p-4">
+          <div className="flex items-center gap-2">
+            <LockKeyhole className="size-4 text-brand-600" />
+            <h2 className="text-sm font-bold">Drafts are locked</h2>
           </div>
-        ) : (
-          <>
+          <p className="mt-2 text-xs leading-5 text-slate-500">
+            Unlock once for this browser session to resume autosave.
+          </p>
+          <Input
+            className="mt-3"
+            type="password"
+            value={passphrase}
+            onChange={(event) => setPassphrase(event.target.value)}
+            onKeyDown={(event) => {
+              if (event.key === "Enter") void unlockStore();
+            }}
+            placeholder="Passphrase"
+          />
+          <Button
+            className="mt-2 w-full"
+            variant="primary"
+            icon={<Unlock className="size-4" />}
+            onClick={() => void unlockStore()}
+          >
+            Unlock
+          </Button>
+          {error ? <p className="mt-2 text-xs text-rose-600">{error}</p> : null}
+        </Card>
+      ) : !context?.isSupported ? (
+        <Card className="mt-4 p-4">
+          <div className="flex items-center justify-between gap-3">
+            <h2 className="text-sm font-bold">{tr("unavailablePage")}</h2>
+            <Badge>{tr("statusUnavailable")}</Badge>
+          </div>
+          <p className="mt-2 text-xs leading-5 text-slate-500">
+            {tr("localNote")}
+          </p>
+        </Card>
+      ) : !hasAccess ? (
+        <Card className="mt-4 p-4">
+          <h2 className="text-sm font-bold">Choose where FormSafe works</h2>
+          <p className="mt-2 text-xs leading-5 text-slate-500">
+            Site access is requested only after you choose it.
+          </p>
+          <Button
+            className="mt-3 w-full"
+            variant="primary"
+            onClick={() => chrome.tabs.create({ url: onboardingUrl })}
+          >
+            Set up access
+          </Button>
+        </Card>
+      ) : (
+        <>
+          <Card className="mt-4 p-3">
             <div className="flex items-start justify-between gap-3">
               <div className="min-w-0">
-                <p className="text-xs font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400">
-                  {t(language, 'currentSite')}
+                <p className="text-[11px] font-bold uppercase tracking-wider text-slate-500">
+                  {tr("currentSite")}
                 </p>
-                <h2 className="mt-1 truncate text-sm font-semibold">{currentDomain}</h2>
+                <h2 className="mt-1 truncate text-sm font-semibold">
+                  {context?.hostname}
+                </h2>
               </div>
-              <Badge tone={context?.isSupported ? (isPaused ? 'amber' : 'green') : 'neutral'}>
-                {context?.isSupported
-                  ? isPaused
-                    ? t(language, 'statusPaused')
-                    : t(language, 'statusActive')
-                  : t(language, 'statusUnavailable')}
+              <Badge tone={site?.isPaused ? "amber" : "green"}>
+                {site?.isPaused ? tr("statusPaused") : tr("statusActive")}
               </Badge>
             </div>
-            <div className="mt-3 flex items-center gap-2 rounded-lg bg-slate-50 p-2 dark:bg-slate-950/70">
-              <FileText className="size-4 text-brand-600 dark:text-brand-100" />
-              <p className="text-xs font-medium text-slate-700 dark:text-slate-300">
-                {t(language, 'draftsSavedForSite', { count: draftCount })}
-              </p>
+            <div className="mt-3 flex items-center gap-2 rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-2 text-xs dark:border-slate-800 dark:bg-slate-950">
+              <Database className="size-4 text-brand-600" />
+              {tr("draftsSavedForSite", { count: site?.draftCount ?? 0 })}
             </div>
-          </>
-        )}
-      </Card>
-
-      <div className="mt-4 grid gap-2">
-        <Button variant="primary" icon={<PanelRightOpen className="size-4" />} onClick={openSidePanel}>
-          {t(language, 'openDrafts')}
-        </Button>
-        <Button
-          variant="secondary"
-          icon={isPaused ? <PlayCircle className="size-4" /> : <PauseCircle className="size-4" />}
-          onClick={togglePause}
-          disabled={!context?.isSupported}
-        >
-          {isPaused ? t(language, 'resumeOnSite') : t(language, 'pauseOnSite')}
-        </Button>
-        <Button variant="ghost" icon={<SettingsIcon className="size-4" />} onClick={openSettings}>
-          {t(language, 'settings')}
-        </Button>
-      </div>
-
-      <p className="mt-4 rounded-lg border border-brand-200 bg-white px-3 py-2 text-[12px] font-medium leading-5 text-slate-700 shadow-sm dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300">
-        {t(language, 'localNote')}
-      </p>
-
-      {toast ? <Toast message={toast.message} tone={toast.tone} /> : null}
+          </Card>
+          {stats && stats.approximateBytes > stats.maxBytes * 0.8 ? (
+            <p className="mt-3 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800">
+              Storage is over 80% of the FormSafe limit.
+            </p>
+          ) : null}
+          <div className="mt-3 grid gap-2">
+            <Button
+              variant="primary"
+              icon={<PanelRightOpen className="size-4" />}
+              onClick={openDrafts}
+            >
+              {tr("openDrafts")}
+            </Button>
+            <Button
+              icon={
+                site?.isPaused ? (
+                  <PlayCircle className="size-4" />
+                ) : (
+                  <PauseCircle className="size-4" />
+                )
+              }
+              onClick={() => void togglePause()}
+            >
+              {site?.isPaused ? tr("resumeOnSite") : tr("pauseOnSite")}
+            </Button>
+            {panelError ? (
+              <p
+                className="rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-xs text-rose-700 dark:border-rose-900 dark:bg-rose-950/40 dark:text-rose-300"
+                role="alert"
+              >
+                {panelError}
+              </p>
+            ) : null}
+          </div>
+        </>
+      )}
+      <Button
+        className="mt-2 w-full"
+        variant="ghost"
+        icon={<Settings className="size-4" />}
+        onClick={() => chrome.runtime.openOptionsPage()}
+      >
+        {tr("settings")}
+      </Button>
     </main>
   );
 }
 
-void bootstrap();
-
-async function bootstrap(): Promise<void> {
-  const initialSettings = await loadInitialSettings();
-  applyDocumentPreferences(initialSettings);
-  createRoot(document.getElementById('root')!).render(<PopupApp initialSettings={initialSettings} />);
-}
-
-async function loadInitialSettings(): Promise<Settings> {
-  const response = await sendMessage<Settings>({ type: MessageTypes.GetSettings });
-  return response.ok ? response.data : DEFAULT_SETTINGS;
-}
-
-function getActiveTabId(): Promise<number | undefined> {
-  return new Promise((resolve) => {
-    chrome.tabs.query({ active: true, currentWindow: true }, ([tab]) => resolve(tab?.id));
-  });
-}
+createRoot(document.getElementById("root")!).render(<PopupApp />);
