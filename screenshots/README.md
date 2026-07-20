@@ -7,6 +7,6 @@ Included image files:
 - `side-panel.png`
 - `popup.png`
 - `settings.png`
-- `privacy-controls.png`
+- `onboarding.png`
 
-Screenshots are captured from the built extension UI, not generated mock artwork.
+Screenshots are captured from the built extension UI, not generated mock artwork. The previous `privacy-controls.png` capture is retained for release history but is no longer used in the main README.
